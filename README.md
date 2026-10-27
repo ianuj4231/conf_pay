@@ -16,7 +16,7 @@ A REST API built with **Node.js, Express, MySQL, and handwritten SQL (`mysql2`)*
 
 ## Project Documentation
 
-- [Design Document](./design.txt) — architecture, database schema, transaction flow, concurrency handling, pessimistic locking, deadlock, and design decisions.
+- [Design Document](./design.txt) — architecture, database schema, transaction flow, concurrency handling (pessimistic locking + deadlock prevention), and design decisions.
 - [Postman API Collection](./conf.postman_collection.json) — API endpoints, request bodies, and examples.
 - [Environment Configuration Example](./example.env) — environment variables required to connect to MySQL.
 
