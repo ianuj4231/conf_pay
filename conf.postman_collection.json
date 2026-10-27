@@ -1,0 +1,541 @@
+{
+  "info": {
+    "_postman_id": "a44b095a-cf83-4b11-8acb-2a1b2f6f5160",
+    "name": "conf",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "32676732"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "aliceId",
+      "value": ""
+    },
+    {
+      "key": "bobId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1_create_account_with_empty_balance",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"Alice\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('creates Alice', function () { pm.response.to.have.status(201); });",
+              "pm.test('starts with zero balance', function () { pm.expect(json.balance).to.eql('0.0000'); });",
+              "pm.collectionVariables.set('aliceId', String(json.id));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "2_increase_balance_of_1_account",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"type\": \"credit\",\r\n  \"amount\": 100.25,\r\n  \"description\": \"Initial deposit\",\r\n  \"reference_id\": \"ALICE-CREDIT-001\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts/{{aliceId}}/transactions",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts",
+            "{{aliceId}}",
+            "transactions"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('credit succeeds', function () { pm.response.to.have.status(201); });",
+              "pm.test('balance is 100.2500', function () { pm.expect(json.balance).to.eql('100.2500'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "3_decrease_balance_of_1_amount",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"type\": \"debit\",\r\n  \"amount\": 30.25,\r\n  \"description\": \"Purchase\",\r\n  \"reference_id\": \"ALICE-DEBIT-001\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts/{{aliceId}}/transactions",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts",
+            "{{aliceId}}",
+            "transactions"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('debit succeeds', function () { pm.response.to.have.status(201); });",
+              "pm.test('balance is 70.0000', function () { pm.expect(json.balance).to.eql('70.0000'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "4_tryna_debit_with_insuff_balance",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"type\": \"debit\",\r\n  \"amount\": 1000,\r\n  \"description\": \"Insufficient balance test\",\r\n  \"reference_id\": \"DECIMAL-INSUFFICIENT-001\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts/{{aliceId}}/transactions",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts",
+            "{{aliceId}}",
+            "transactions"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('insufficient debit returns 409', function () { pm.response.to.have.status(409); });",
+              "pm.test('returns insufficient balance', function () { pm.expect(json.error).to.eql('Insufficient balance'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "5_idempotency_check",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"type\": \"credit\",\r\n  \"amount\": 100.25,\r\n  \"description\": \"Initial deposit\",\r\n  \"reference_id\": \"ALICE-CREDIT-001\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts/{{aliceId}}/transactions",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts",
+            "{{aliceId}}",
+            "transactions"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('duplicate transaction returns 409', function () { pm.response.to.have.status(409); });",
+              "pm.test('transaction is marked duplicate', function () { pm.expect(json.duplicate).to.eql(true); });",
+              "pm.test('balance remains 70.0000', function () { pm.expect(json.balance).to.eql('70.0000'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "6_get_txns_of_1_user",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/accounts/{{aliceId}}/transactions",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts",
+            "{{aliceId}}",
+            "transactions"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('history succeeds', function () { pm.response.to.have.status(200); });",
+              "pm.test('history has two transactions', function () { pm.expect(json.total_records).to.eql(2); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "7_get_txn_of_1_user_by_type_either_credit_or_debit",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts/{{aliceId}}/transactions?type=debit",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts",
+            "{{aliceId}}",
+            "transactions"
+          ],
+          "query": [
+            {
+              "key": "type",
+              "value": "debit"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('debit filter succeeds', function () { pm.response.to.have.status(200); });",
+              "pm.test('one debit is returned', function () { pm.expect(json.total_records).to.eql(1); pm.expect(json.transactions[0].type).to.eql('debit'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "8_get_account_balance_of_1_user",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts/{{aliceId}}/balance",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts",
+            "{{aliceId}}",
+            "balance"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('balance succeeds', function () { pm.response.to.have.status(200); });",
+              "pm.test('balance is 70.0000', function () { pm.expect(json.balance).to.eql('70.0000'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "9_pagination",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts/{{aliceId}}/transactions?page=1&limit=1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts",
+            "{{aliceId}}",
+            "transactions"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('pagination succeeds', function () { pm.response.to.have.status(200); });",
+              "pm.test('pagination metadata is correct', function () { pm.expect(json.page_size).to.eql(1); pm.expect(json.total_records).to.eql(2); pm.expect(json.total_pages).to.eql(2); pm.expect(json.transactions).to.have.length(1); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "10_create_new_user_account",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"Bob\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/accounts",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "accounts"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('creates Bob', function () { pm.response.to.have.status(201); });",
+              "pm.collectionVariables.set('bobId', String(json.id));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "11_bonus_user_to_user_transfer",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"from_account_id\": \"{{aliceId}}\",\r\n  \"to_account_id\": \"{{bobId}}\",\r\n  \"amount\": 30.25,\r\n  \"reference_id\": \"TRANSFER-001\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/transfers",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "transfers"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('transfer succeeds', function () { pm.response.to.have.status(201); });",
+              "pm.test('transfer balances are correct', function () { pm.expect(json.balances.from_account_id).to.eql('39.7500'); pm.expect(json.balances.to_account_id).to.eql('30.2500'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "12_user_to_user_transfer_idempotency_check",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"from_account_id\": \"{{aliceId}}\",\r\n  \"to_account_id\": \"{{bobId}}\",\r\n  \"amount\": 30.25,\r\n  \"reference_id\": \"TRANSFER-001\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/transfers",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "transfers"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('duplicate transfer returns 409', function () { pm.response.to.have.status(409); });",
+              "pm.test('transfer is marked duplicate', function () { pm.expect(json.duplicate).to.eql(true); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    }
+  ]
+}
