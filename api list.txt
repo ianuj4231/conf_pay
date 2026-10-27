@@ -1,0 +1,108 @@
+RAW MYSQL ACCOUNT TRANSACTION API LIST
+
+1. Create account
+
+POST /accounts
+
+Request body:
+{
+  "name": "Ravi"
+}
+
+Success: 201 Created
+Returns: account id, name, balance, created_at, updated_at.
+
+Errors:
+- 400 when name is missing or blank.
+
+2. Get account balance
+
+GET /accounts/:accountId/balance
+
+Success: 200 OK
+Returns:
+{
+  "account_id": 1,
+  "balance": "100.0000"
+}
+
+Errors:
+- 404 when the account does not exist.
+
+3. Create transaction
+
+POST /accounts/:accountId/transactions
+
+Request body:
+{
+  "type": "credit",
+  "amount": 100,
+  "description": "Initial credit",
+  "reference_id": "PAY-1001"
+}
+
+Success: 201 Created
+Returns: transaction, updated balance, and duplicate=false.
+
+Duplicate: 409 Conflict
+Returns: the existing transaction, current balance, and duplicate=true. The balance is not
+changed and a second transaction is not created.
+
+Errors:
+- 400 for invalid type, missing reference_id, invalid amount, or invalid account ID format.
+- 404 when the account does not exist.
+- 409 when a debit exceeds the current balance.
+
+4. Get transaction history
+
+GET /accounts/:accountId/transactions?type=credit&page=1&limit=20
+
+Query parameters:
+- type: optional credit or debit
+- page: optional positive integer, default 1
+- limit: optional positive integer, default 20, maximum 100
+
+Success: 200 OK
+Returns transactions in latest-first order and:
+- current_page
+- page_size
+- total_records
+- total_pages
+- transactions
+
+Errors:
+- 400 for invalid type, page, or limit.
+- 404 when the account does not exist.
+
+5. Intentionally unavailable transaction APIs
+
+There is no transaction update API and no transaction delete API. Transactions are immutable
+after creation as required by the assessment.
+
+6. Optional bonus API: transfer money
+
+POST /transfers
+
+Request body:
+{
+  "from_account_id": 1,
+  "to_account_id": 2,
+  "amount": 30,
+  "reference_id": "TRANSFER-1001"
+}
+
+Success: 201 Created
+Behavior:
+- Locks both account rows with SELECT FOR UPDATE.
+- Locks them in numeric account ID order to reduce deadlock risk.
+- Decreases the source balance and increases the destination balance.
+- Inserts the transfer and two transaction records in one database transaction.
+- Commits all changes together.
+
+Duplicate: 409 Conflict
+The same reference_id returns a duplicate response and does not move money again.
+
+Errors:
+- 400 for invalid account IDs, same source/destination account, invalid amount, or missing reference_id.
+- 404 when either account does not exist.
+- 409 when the source account has insufficient balance.

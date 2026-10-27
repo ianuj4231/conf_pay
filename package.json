@@ -1,0 +1,17 @@
+{
+  "name": "raw-mysql-account-transaction-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full Stack Developer Assessment API using Express and raw MySQL SQL",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "check": "node --check src/server.js && node --check src/app.js && node --check src/db.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mysql2": "^3.12.0"
+  }
+}
